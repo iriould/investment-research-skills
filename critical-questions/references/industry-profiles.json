@@ -1,0 +1,265 @@
+{
+  "_comment": "行业画像参考数据 - 由 industry-research, company-research, critical-questions, competitive-analysis 共享",
+  "industries": {
+    "AI": {
+      "name": "人工智能",
+      "aliases": ["大模型", "人工智能", "机器学习", "深度学习", "AGI", "AIGC"],
+      "key_metrics": [
+        {"metric": "模型性能/精度", "why": "技术竞争力"},
+        {"metric": "推理成本", "why": "商业模式可行性"},
+        {"metric": "数据壁垒", "why": "护城河"},
+        {"metric": "API调用量/DAU", "why": "产品化程度"}
+      ],
+      "blindspot_checks": [
+        "数据合规风险",
+        "开源替代威胁",
+        "算力成本可持续性"
+      ],
+      "comparison_dimensions": [
+        {"name": "模型性能", "weight": "high", "key": "Benchmark分数、推理速度、多模态能力"},
+        {"name": "推理成本", "weight": "high", "key": "单次推理成本、token单价"},
+        {"name": "数据壁垒", "weight": "high", "key": "独有数据源、数据规模、数据合规"},
+        {"name": "API生态", "weight": "medium", "key": "开发者数量、集成数量、文档质量"},
+        {"name": "客户规模", "weight": "medium", "key": "付费客户数、大客户占比"},
+        {"name": "融资", "weight": "low", "key": "融资轮次、估值、投资方"}
+      ],
+      "tech_dimensions": {
+        "tech_stack": ["PyTorch/TensorFlow", "CUDA/ROCm", "vLLM/SGLang/TGI", "Kubernetes"],
+        "architecture_patterns": ["模型服务化", "KV Cache优化", "连续批处理", "分布式推理"],
+        "key_challenges": ["显存瓶颈", "长序列推理", "多模态融合", "推理延迟优化"],
+        "open_source_ecosystem": "高度开源（PyTorch/vLLM/SGLang等），专有壁垒在优化层",
+        "maturity": {"基础模型": "成长期", "推理引擎": "成长期", "AI应用": "早期"}
+      }
+    },
+    "SaaS": {
+      "name": "SaaS/软件服务",
+      "aliases": ["云计算", "软件", "订阅", "企业软件", "SaaS平台"],
+      "key_metrics": [
+        {"metric": "NRR/净收入留存率", "why": "产品粘性和扩展性"},
+        {"metric": "CAC/LTV", "why": "获客效率"},
+        {"metric": "ARR", "why": "订阅制核心指标"},
+        {"metric": "Churn/流失率", "why": "客户粘性"}
+      ],
+      "blindspot_checks": [
+        "客户集中度风险",
+        "续费率真实质量",
+        "定价权可持续性"
+      ],
+      "comparison_dimensions": [
+        {"name": "NRR", "weight": "high", "key": "净收入留存率"},
+        {"name": "CAC/LTV", "weight": "high", "key": "获客成本/客户终身价值"},
+        {"name": "ARR", "weight": "high", "key": "年度经常性收入"},
+        {"name": "产品功能", "weight": "medium", "key": "功能覆盖度、差异化功能"},
+        {"name": "集成能力", "weight": "medium", "key": "第三方集成数量、API开放度"},
+        {"name": "定价", "weight": "low", "key": "定价模式、价格带"}
+      ],
+      "tech_dimensions": {
+        "tech_stack": ["React/Vue/Angular", "Node.js/Python/Go", "PostgreSQL/MySQL", "AWS/Azure/GCP"],
+        "architecture_patterns": ["微服务", "多租户", "API优先", "事件驱动"],
+        "key_challenges": ["多租户隔离", "数据安全合规", "API性能与限流", "集成复杂度"],
+        "open_source_ecosystem": "大量开源框架和工具，专有壁垒在业务逻辑和数据层",
+        "maturity": {"IaaS": "成熟", "PaaS": "成熟", "SaaS应用": "成长期"}
+      }
+    },
+    "半导体": {
+      "name": "半导体",
+      "aliases": ["芯片", "集成电路", "IC设计", "晶圆", "EDA"],
+      "key_metrics": [
+        {"metric": "制程节点", "why": "技术代际决定竞争力"},
+        {"metric": "良率", "why": "制造能力核心指标"},
+        {"metric": "产能利用率", "why": "收入可预测性"},
+        {"metric": "国产替代率", "why": "政策驱动力"}
+      ],
+      "blindspot_checks": [
+        "地缘政治风险",
+        "技术路线变更风险",
+        "供应链断供风险"
+      ],
+      "comparison_dimensions": [
+        {"name": "制程节点", "weight": "high", "key": "先进制程量产能力"},
+        {"name": "良率", "weight": "high", "key": "量产良率水平"},
+        {"name": "产能", "weight": "high", "key": "产能规模、扩产计划"},
+        {"name": "客户结构", "weight": "medium", "key": "大客户占比、客户粘性"},
+        {"name": "国产替代率", "weight": "medium", "key": "国产化替代进度"},
+        {"name": "融资/估值", "weight": "low", "key": "融资轮次、估值水平"}
+      ],
+      "tech_dimensions": {
+        "tech_stack": ["Verilog/VHDL", "EDA工具链", "光刻技术", "封测技术"],
+        "architecture_patterns": ["SoC设计", "IP复用", "Chiplet", "3D封装"],
+        "key_challenges": ["先进制程突破", "EDA工具国产化", "光刻机获取", "良率提升"],
+        "open_source_ecosystem": "EDA和IP以专有为主，RISC-V是开源突破口",
+        "maturity": {"成熟制程": "成熟", "先进制程(7nm+)": "成长期", "Chiplet": "早期"}
+      }
+    },
+    "消费": {
+      "name": "消费",
+      "aliases": ["零售", "餐饮", "品牌", "快消", "新消费"],
+      "key_metrics": [
+        {"metric": "复购率", "why": "品牌粘性"},
+        {"metric": "渠道结构", "why": "销售可控性"},
+        {"metric": "客单价", "why": "定位和升级空间"},
+        {"metric": "同店增长", "why": "内生增长能力"}
+      ],
+      "blindspot_checks": [
+        "品牌老化风险",
+        "渠道依赖风险",
+        "消费趋势变化"
+      ],
+      "comparison_dimensions": [
+        {"name": "品牌力", "weight": "high", "key": "品牌认知度、复购率、NPS"},
+        {"name": "渠道", "weight": "high", "key": "线上/线下渠道覆盖、渠道效率"},
+        {"name": "复购率", "weight": "high", "key": "用户复购率、订阅率"},
+        {"name": "客单价", "weight": "medium", "key": "客单价水平、提升趋势"},
+        {"name": "SKU", "weight": "medium", "key": "SKU数量、爆款集中度"},
+        {"name": "营收规模", "weight": "low", "key": "营收规模、增速"}
+      ],
+      "tech_dimensions": {
+        "tech_stack": ["电商平台", "CRM/CDP", "供应链系统", "数据分析"],
+        "architecture_patterns": ["全渠道", "DTC", "私域运营", "智能供应链"],
+        "key_challenges": ["消费者洞察", "供应链效率", "全渠道整合", "个性化推荐"],
+        "open_source_ecosystem": "技术层以成熟方案为主，壁垒在品牌和渠道",
+        "maturity": {"电商": "成熟", "私域": "成长期", "AI+消费": "早期"}
+      }
+    },
+    "制造": {
+      "name": "制造",
+      "aliases": ["工业", "装备", "工厂", "产线"],
+      "key_metrics": [
+        {"metric": "产能利用率", "why": "需求饱满度"},
+        {"metric": "良率", "why": "工艺水平"},
+        {"metric": "大客户占比", "why": "依赖风险"},
+        {"metric": "自动化率", "why": "效率提升空间"}
+      ],
+      "blindspot_checks": [
+        "产能过剩风险",
+        "原材料价格波动",
+        "环保合规风险"
+      ],
+      "comparison_dimensions": [
+        {"name": "产能利用率", "weight": "high", "key": "产能利用率水平"},
+        {"name": "良率", "weight": "high", "key": "产品良率"},
+        {"name": "大客户", "weight": "high", "key": "大客户依赖度、客户粘性"},
+        {"name": "自动化率", "weight": "medium", "key": "产线自动化水平"},
+        {"name": "交付周期", "weight": "medium", "key": "订单交付周期"},
+        {"name": "融资/估值", "weight": "low", "key": "融资轮次、估值水平"}
+      ],
+      "tech_dimensions": {
+        "tech_stack": ["PLC/SCADA", "MES", "ERP", "工业机器人"],
+        "architecture_patterns": ["柔性制造", "数字孪生", "工业互联网", "智能产线"],
+        "key_challenges": ["工艺优化", "设备互联", "质量追溯", "能耗优化"],
+        "open_source_ecosystem": "工业软件以专有为主，工业互联网平台部分开源",
+        "maturity": {"自动化": "成熟", "数字化": "成长期", "智能化": "早期"}
+      }
+    },
+    "医疗": {
+      "name": "医疗健康",
+      "aliases": ["医药", "生物", "器械", "创新药", "数字健康", "CXO"],
+      "key_metrics": [
+        {"metric": "临床进度", "why": "产品离商业化多远"},
+        {"metric": "审批状态", "why": "监管风险"},
+        {"metric": "医保覆盖", "why": "支付能力"},
+        {"metric": "试验数据", "why": "有效性验证"}
+      ],
+      "blindspot_checks": [
+        "临床失败风险",
+        "监管政策变化",
+        "集采降价风险"
+      ],
+      "comparison_dimensions": [
+        {"name": "产品", "weight": "high", "key": "临床证据等级、注册证状态、患者结果数据"},
+        {"name": "技术", "weight": "high", "key": "研发管线、专利悬崖、数据资产"},
+        {"name": "商业模式", "weight": "medium", "key": "医保覆盖、医院渠道、DTP vs DTB"},
+        {"name": "团队", "weight": "medium", "key": "医学背景、监管经验、行业关系"},
+        {"name": "融资", "weight": "medium", "key": "研发烧钱率、临床里程碑融资"},
+        {"name": "财务", "weight": "low", "key": "研发占收入比、毛利率、回款周期"}
+      ],
+      "tech_dimensions": {
+        "tech_stack": ["生物信息学", "AI药物发现", "临床数据管理", "基因测序"],
+        "architecture_patterns": ["精准医疗", "远程医疗", "数字疗法", "RWE驱动"],
+        "key_challenges": ["临床验证周期长", "监管合规复杂", "数据安全隐私", "医保准入"],
+        "open_source_ecosystem": "研究工具部分开源，核心管线和临床数据高度专有",
+        "maturity": {"传统药械": "成熟", "数字健康": "成长期", "AI+医疗": "早期"}
+      }
+    },
+    "新能源": {
+      "name": "新能源",
+      "aliases": ["光伏", "储能", "风电", "锂电", "氢能", "充电桩"],
+      "key_metrics": [
+        {"metric": "转换效率", "why": "技术竞争力"},
+        {"metric": "度电成本", "why": "经济性"},
+        {"metric": "产能/出货量", "why": "规模化能力"},
+        {"metric": "补贴依赖度", "why": "政策风险"}
+      ],
+      "blindspot_checks": [
+        "技术路线替代风险",
+        "补贴退坡影响",
+        "产能过剩周期"
+      ],
+      "comparison_dimensions": [
+        {"name": "产品", "weight": "high", "key": "能量密度/效率、耐久性"},
+        {"name": "技术", "weight": "high", "key": "材料创新、工艺工程、专利布局"},
+        {"name": "商业模式", "weight": "medium", "key": "BOM成本趋势、政策补贴依赖度、长单锁定"},
+        {"name": "团队", "weight": "medium", "key": "工程背景、供应链经验"},
+        {"name": "融资", "weight": "medium", "key": "重资产投入、政府基金参与"},
+        {"name": "财务", "weight": "low", "key": "产能利用率、单位成本下降曲线"}
+      ],
+      "tech_dimensions": {
+        "tech_stack": ["材料科学", "工艺工程", "BMS/EMS", "功率半导体"],
+        "architecture_patterns": ["分布式发电", "储能系统集成", "V2G", "微电网"],
+        "key_challenges": ["能量密度提升", "成本下降曲线", "安全性", "回收利用"],
+        "open_source_ecosystem": "硬件以专有为主，软件控制层部分开源",
+        "maturity": {"光伏": "成熟", "锂电": "成长期", "储能": "成长期", "氢能": "早期"}
+      }
+    },
+    "金融科技": {
+      "name": "金融科技",
+      "aliases": ["支付", "借贷", "保险科技", "数字银行", "财富管理", "区块链"],
+      "key_metrics": [
+        {"metric": "风控指标/不良率", "why": "信用风险"},
+        {"metric": "牌照", "why": "合规性"},
+        {"metric": "资金成本", "why": "盈利能力"},
+        {"metric": "交易规模/撮合量", "why": "平台价值"}
+      ],
+      "blindspot_checks": [
+        "监管套利风险",
+        "风控模型失效",
+        "流动性风险"
+      ],
+      "comparison_dimensions": [
+        {"name": "产品", "weight": "high", "key": "风控模型、用户体验、合规架构"},
+        {"name": "技术", "weight": "medium", "key": "数据资产、算法能力、系统稳定性"},
+        {"name": "商业模式", "weight": "high", "key": "获客成本、资金成本、利差/费率"},
+        {"name": "团队", "weight": "medium", "key": "金融+技术复合背景、监管经验"},
+        {"name": "融资", "weight": "medium", "key": "牌照获取、资本充足率要求"},
+        {"name": "财务", "weight": "low", "key": "不良率、资金周转率、合规成本占比"}
+      ],
+      "tech_dimensions": {
+        "tech_stack": ["Java/Go", "分布式数据库", "实时计算", "风控引擎"],
+        "architecture_patterns": ["微服务", "事件驱动", "实时风控", "开放银行API"],
+        "key_challenges": ["风控模型迭代", "数据合规", "系统高可用", "反欺诈"],
+        "open_source_ecosystem": "基础设施层大量开源，核心风控和交易系统专有",
+        "maturity": {"支付": "成熟", "数字银行": "成长期", "DeFi": "早期"}
+      }
+    },
+    "generic": {
+      "name": "通用",
+      "key_metrics": [
+        {"metric": "TAM/SAM/SOM", "why": "市场规模是估值基础"},
+        {"metric": "市占率", "why": "竞争地位"},
+        {"metric": "增速/增长率", "why": "增长是PE投资核心逻辑"}
+      ],
+      "blindspot_checks": [
+        "核心业务指标缺失",
+        "行业标杆对比缺失"
+      ],
+      "comparison_dimensions": [
+        {"name": "产品差异化", "weight": "high", "key": "核心差异化功能、壁垒"},
+        {"name": "客户规模", "weight": "high", "key": "付费客户数、大客户占比"},
+        {"name": "增长", "weight": "high", "key": "营收增速、用户增速"},
+        {"name": "技术壁垒", "weight": "medium", "key": "核心技术、专利、研发投入"},
+        {"name": "团队", "weight": "medium", "key": "创始人背景、团队规模"},
+        {"name": "融资", "weight": "low", "key": "融资轮次、估值"}
+      ]
+    }
+  }
+}
