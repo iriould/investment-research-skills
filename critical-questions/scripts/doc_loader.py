@@ -12,8 +12,8 @@
 - 不输出任何文本内容到终端，只输出文件清单
 - 首次使用自动安装所需依赖
 
-依赖（仅2个）：pymupdf, pillow
-  pip install pymupdf pillow
+依赖：pymupdf, pillow, pytesseract, openpyxl, python-docx
+  pip install pymupdf pillow pytesseract openpyxl python-docx
 
 用法:
   python doc_loader.py <资料目录>
@@ -24,11 +24,13 @@ import os
 import json
 import argparse
 import hashlib
+import shutil
 import subprocess
 from pathlib import Path
 from datetime import datetime
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 
 # ==================== 依赖自动安装 ====================
@@ -50,7 +52,7 @@ def check_and_install_dependencies():
         except Exception as e:
             print(f"  警告: 依赖安装失败. {e}", file=sys.stderr)
             print(f"  请手动: pip install {' '.join(missing)}", file=sys.stderr)
-            print(f"  注意: pytesseract还需安装Tesseract OCR引擎", file=sys.stderr)
+            print(f"  注意: pytesseract还需可执行的Tesseract OCR引擎", file=sys.stderr)
 
     
 check_and_install_dependencies()
@@ -324,6 +326,154 @@ LOADERS = {
 
 # ==================== PDF处理 ====================
 
+_TESSERACT_CMD_CACHE = None
+_OCR_LANG_CACHE = None
+
+
+def configure_pymupdf(pymupdf_module) -> None:
+    """静默MuPDF解析警告，避免污染JSON输出。"""
+    tools = getattr(pymupdf_module, "TOOLS", None)
+    if not tools:
+        return
+    for method_name in ("mupdf_display_errors", "mupdf_display_warnings"):
+        method = getattr(tools, method_name, None)
+        if method:
+            method(False)
+
+def _tesseract_exe_name() -> str:
+    return "tesseract.exe" if os.name == "nt" else "tesseract"
+
+
+def _as_tesseract_exe(path_value: str) -> Path:
+    path = Path(path_value).expanduser()
+    if path.name.lower() == _tesseract_exe_name().lower():
+        return path
+    return path / _tesseract_exe_name()
+
+
+def _windows_registry_tesseract_dirs() -> list:
+    if os.name != "nt":
+        return []
+
+    dirs = []
+    try:
+        import winreg
+
+        roots = (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER)
+        views = (0, getattr(winreg, "KEY_WOW64_64KEY", 0), getattr(winreg, "KEY_WOW64_32KEY", 0))
+        for root in roots:
+            for view in views:
+                try:
+                    key = winreg.OpenKey(root, r"SOFTWARE\Tesseract-OCR", 0, winreg.KEY_READ | view)
+                except OSError:
+                    continue
+                try:
+                    for value_name in ("InstallDir", "Path"):
+                        try:
+                            value, _ = winreg.QueryValueEx(key, value_name)
+                            if value:
+                                dirs.append(str(value))
+                        except OSError:
+                            continue
+                finally:
+                    winreg.CloseKey(key)
+    except Exception:
+        pass
+
+    return dirs
+
+
+def _tesseract_candidates() -> list:
+    candidates = []
+    for env_name in ("TESSERACT_CMD", "TESSERACT_EXE", "TESSERACT_PATH"):
+        value = os.environ.get(env_name)
+        if value:
+            candidates.append(_as_tesseract_exe(value))
+
+    found_on_path = shutil.which("tesseract")
+    if found_on_path:
+        candidates.append(Path(found_on_path))
+
+    candidates.extend(_as_tesseract_exe(p) for p in _windows_registry_tesseract_dirs())
+
+    if os.name == "nt":
+        local_appdata = os.environ.get("LOCALAPPDATA", "")
+        candidates.extend([
+            Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe"),
+            Path(r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe"),
+            Path(local_appdata) / r"Programs\Tesseract-OCR\tesseract.exe" if local_appdata else Path(),
+        ])
+    else:
+        candidates.extend([
+            Path("/usr/bin/tesseract"),
+            Path("/usr/local/bin/tesseract"),
+            Path("/opt/homebrew/bin/tesseract"),
+        ])
+
+    unique = []
+    seen = set()
+    for candidate in candidates:
+        if not candidate:
+            continue
+        key = str(candidate).lower() if os.name == "nt" else str(candidate)
+        if key not in seen:
+            seen.add(key)
+            unique.append(candidate)
+    return unique
+
+
+def configure_tesseract() -> Path:
+    """定位Tesseract可执行文件，并配置pytesseract。"""
+    import pytesseract
+    global _TESSERACT_CMD_CACHE
+
+    if _TESSERACT_CMD_CACHE and _TESSERACT_CMD_CACHE.exists():
+        pytesseract.pytesseract.tesseract_cmd = str(_TESSERACT_CMD_CACHE)
+        return _TESSERACT_CMD_CACHE
+
+    candidates = _tesseract_candidates()
+    for candidate in candidates:
+        if candidate.exists():
+            pytesseract.pytesseract.tesseract_cmd = str(candidate)
+            _TESSERACT_CMD_CACHE = candidate
+            return candidate
+
+    checked = ", ".join(str(p) for p in candidates[:8])
+    raise RuntimeError(f"未找到Tesseract OCR引擎。已检查: {checked}")
+
+
+def get_ocr_lang(tesseract_cmd: Path = None) -> str:
+    """根据已安装语言包选择OCR语言。"""
+    global _OCR_LANG_CACHE
+
+    cache_key = (str(tesseract_cmd) if tesseract_cmd else "", os.environ.get("TESSDATA_PREFIX", ""))
+    if _OCR_LANG_CACHE and _OCR_LANG_CACHE[0] == cache_key:
+        return _OCR_LANG_CACHE[1]
+
+    tessdata_dirs = []
+    if os.environ.get("TESSDATA_PREFIX"):
+        tessdata_dirs.append(Path(os.environ["TESSDATA_PREFIX"]))
+    if tesseract_cmd:
+        tessdata_dirs.append(Path(tesseract_cmd).parent / "tessdata")
+
+    installed = set()
+    for tessdata_dir in tessdata_dirs:
+        if tessdata_dir.exists():
+            installed.update(p.stem for p in tessdata_dir.glob("*.traineddata"))
+
+    if "chi_sim" in installed and "eng" in installed:
+        lang = "chi_sim+eng"
+    elif "chi_sim" in installed:
+        lang = "chi_sim"
+    elif "eng" in installed:
+        lang = "eng"
+    else:
+        lang = "chi_sim+eng"
+
+    _OCR_LANG_CACHE = (cache_key, lang)
+    return lang
+
+
 def detect_pdf_type(path: Path) -> str:
     """
     用 OCR 检测第2页的文字数量来判断 PDF 类型
@@ -334,23 +484,24 @@ def detect_pdf_type(path: Path) -> str:
         import pytesseract
         from PIL import Image
         import pymupdf
+        configure_pymupdf(pymupdf)
 
+        tesseract_cmd = configure_tesseract()
+        ocr_lang = get_ocr_lang(tesseract_cmd)
         doc = pymupdf.open(path)
-        
+
         # 只检测第2页
         if len(doc) < 2:
             doc.close()
             return "text_based"  # 不足2页默认 OCR
-        
+
         page = doc[1]  # 第2页（0索引）
         pix = page.get_pixmap(dpi=150)
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-        text = pytesseract.image_to_string(img, lang='chi_sim+eng')
+        text = pytesseract.image_to_string(img, lang=ocr_lang)
         chars = len(text.strip())
-        
         doc.close()
 
-        # 判断阈值
         if chars > 500:
             return "text_based"    # Word转PDF，OCR识别
         else:
@@ -365,6 +516,7 @@ def pdf_to_images(path: Path, cache_dir: Path, max_pages: int = 50) -> dict:
     """PPT转PDF：直接转图片，AI直接读图"""
     try:
         import pymupdf
+        configure_pymupdf(pymupdf)
         print(f"  [PPT转PDF→图片] {path.name}", file=sys.stderr)
 
         pdf_stem = path.stem
@@ -398,6 +550,9 @@ def pdf_ocr_text(path: Path, cache_dir: Path, max_pages: int = 50) -> dict:
         import pytesseract
         from PIL import Image
         import pymupdf
+        configure_pymupdf(pymupdf)
+        tesseract_cmd = configure_tesseract()
+        ocr_lang = get_ocr_lang(tesseract_cmd)
         print(f"  [Word转PDF→OCR] {path.name}", file=sys.stderr)
 
         doc = pymupdf.open(path)
@@ -408,8 +563,8 @@ def pdf_ocr_text(path: Path, cache_dir: Path, max_pages: int = 50) -> dict:
             page = doc[page_num]
             pix = page.get_pixmap(dpi=200)
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            
-            text = pytesseract.image_to_string(img, lang='chi_sim+eng')
+
+            text = pytesseract.image_to_string(img, lang=ocr_lang)
             if text and text.strip():
                 lines = [l.strip() for l in text.split('\n') if l.strip() and len(l.strip()) >= 2]
                 if lines:
@@ -418,19 +573,18 @@ def pdf_ocr_text(path: Path, cache_dir: Path, max_pages: int = 50) -> dict:
         doc.close()
 
         result = '\n\n'.join(full_text)
-        
+
         # 保存OCR结果
         pdf_stem = path.stem
         ocr_path = cache_dir / f"{pdf_stem}_ocr.txt"
         with open(ocr_path, "w", encoding="utf-8") as f:
             f.write(result)
-        
+
         print(f"  OCR完成 {total_pages} 页 -> {ocr_path}", file=sys.stderr)
 
         return {"ocr_text": result, "total_pages": total_pages, "ocr_path": str(ocr_path)}
     except Exception as e:
         print(f"  OCR失败: {e}", file=sys.stderr)
-        # 尝试回退到纯图片模式
         return pdf_to_images(path, cache_dir, max_pages)
 
 
@@ -456,13 +610,27 @@ def process_pdf(path: Path, cache_dir: Path, max_pages: int = 50) -> dict:
     else:
         # Word转PDF：OCR识别文字
         result = pdf_ocr_text(path, cache_dir, max_pages)
+        content = result.get("ocr_text", "")
+        if not content and result.get("images"):
+            return {
+                "file_name": path.name,
+                "file_type": ".pdf",
+                "file_size": path.stat().st_size,
+                "pdf_type": "image_based",
+                "content": "[OCR失败，已转为图片，请使用image工具读取]",
+                "content_length": result.get("total_pages", 0),
+                "content_type": "pdf_images",
+                "images": result.get("images", []),
+                "image_dir": result.get("image_dir", ""),
+                "file_hash": file_hash(path),
+            }
         return {
             "file_name": path.name,
             "file_type": ".pdf",
             "file_size": path.stat().st_size,
             "pdf_type": "text_based",
-            "content": result.get("ocr_text", ""),
-            "content_length": len(result.get("ocr_text", "")),
+            "content": content,
+            "content_length": len(content),
             "content_type": "pdf_ocr",
             "ocr_path": result.get("ocr_path", ""),
             "file_hash": file_hash(path),
@@ -497,7 +665,7 @@ def save_text(content: str, cache_dir: Path, file_name: str) -> str:
 def load_directory(directory: str, cache_dir: Path, max_pages: int = 50) -> list:
     dir_path = Path(directory)
     if not dir_path.exists():
-        print(json.dumps({"error": f"目录不存在: {directory}"}, ensure_ascii=False))
+        print(json.dumps({"error": f"目录不存在: {directory}"}, ensure_ascii=True))
         sys.exit(1)
 
     documents = []
@@ -587,7 +755,7 @@ def main():
         "total_documents": len(files),
         "files": files,
     }
-    print(json.dumps(output, ensure_ascii=False, indent=2))
+    print(json.dumps(output, ensure_ascii=True, indent=2))
 
 
 if __name__ == "__main__":

@@ -115,5 +115,7 @@ openpyxl     # Excel 读取
 python-docx  # Word 文档读取
 ```
 
+系统级 Tesseract OCR 引擎也需要安装；Windows 下脚本会自动尝试从 `TESSERACT_CMD`、PATH、注册表和常见安装目录定位 `tesseract.exe`。
+
 
 
